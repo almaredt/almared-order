@@ -4,14 +4,14 @@ plugins {
 
 android {
     namespace 'com.almared.orderlist'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.almared.orderlist"
         minSdk 26
-        targetSdk 35
-        versionCode 6
-        versionName "1.5"
+        targetSdk 36
+        versionCode 7
+        versionName "1.6"
     }
 
     // Release signing: set these 4 environment variables (or GitHub secrets) to sign with your own key.

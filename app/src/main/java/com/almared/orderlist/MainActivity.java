@@ -21,6 +21,8 @@ import android.util.Base64;
 import android.view.View;
 import android.view.WindowInsets;
 import android.webkit.JavascriptInterface;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -128,6 +130,7 @@ public class MainActivity extends Activity {
         });
 
         web.addJavascriptInterface(new Bridge(), "AndroidApp");
+        registerBack();
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         else web.loadUrl(START_URL);
     }
@@ -241,13 +244,34 @@ public class MainActivity extends Activity {
         return checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
     }
 
-    /* ---------- back button ---------- */
+    /* ---------- back button ----------
+       Android 13+ (and required behaviour when targeting Android 16): OnBackInvokedCallback.
+       Older Android: onBackPressed. Either way the web page decides first (close sheet, camera, order). */
+    private OnBackInvokedCallback backCallback;
+
+    private void registerBack() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            backCallback = this::handleBack;
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback);
+        }
+    }
+
+    private void handleBack() {
+        web.evaluateJavascript("(window.appBack && window.appBack()) ? 'yes' : 'no'", value -> {
+            if (value == null || !value.contains("yes")) {
+                if (Build.VERSION.SDK_INT >= 33 && backCallback != null) {
+                    getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);
+                    backCallback = null;
+                }
+                finish();
+            }
+        });
+    }
+
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
-        web.evaluateJavascript("(window.appBack && window.appBack()) ? 'yes' : 'no'", value -> {
-            if (value == null || !value.contains("yes")) MainActivity.super.onBackPressed();
-        });
+        handleBack();
     }
 
     @Override

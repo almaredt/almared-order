@@ -37,15 +37,19 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon
+        run: chmod +x gradlew && ./gradlew assembleRelease bundleRelease --no-daemon
 
-      - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk ALMARED-Order.apk
+      - name: Rename APK and AAB
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk ALMARED-Order.apk
+          cp app/build/outputs/bundle/release/app-release.aab ALMARED-Order-GooglePlay.aab
 
       - uses: actions/upload-artifact@v4
         with:
           name: ALMARED-Order-APK
-          path: ALMARED-Order.apk
+          path: |
+            ALMARED-Order.apk
+            ALMARED-Order-GooglePlay.aab
 
       - name: Publish APK as the latest release (direct download link)
         uses: softprops/action-gh-release@v2
@@ -53,4 +57,6 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: ALMARED Order build ${{ github.run_number }}
           make_latest: true
-          files: ALMARED-Order.apk
+          files: |
+            ALMARED-Order.apk
+            ALMARED-Order-GooglePlay.aab
