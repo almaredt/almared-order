@@ -194,3 +194,11 @@ label input.manual{color:var(--orange-d);border-color:var(--orange)}
 
 /* offscreen holder for PDF rendering */
 #sheetHold{position:fixed;left:-30000px;top:0;width:794px}
+
+.sendbtn{height:38px;padding:0 14px;border-radius:12px;background:var(--orange);color:#fff;font-weight:700;font-size:13.5px;white-space:nowrap;flex:none}
+.sendbtn:active{background:var(--orange-d)}
+.exsec{font-size:12.5px;font-weight:700;color:var(--muted);margin:14px 2px 8px}
+.exsec:first-of-type{margin-top:0}
+.exbtn.wa{background:#DDF5E4}.exbtn.wa b{color:#128C4A}
+.dbtn.wa{background:#DDF5E4;color:#128C4A}
+.dbtn.wa small{color:#128C4A}

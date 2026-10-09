@@ -25,7 +25,7 @@
   <header class="appbar">
     <button class="ibtn" id="oBack" aria-label="بازگشت">→</button>
     <div class="ttl"><b id="oTitle">—</b><small id="oSub"></small></div>
-    <button class="ibtn" id="oExport" aria-label="خروجی">⤓</button>
+    <button class="sendbtn" id="oExport">ارسال / خروجی</button>
     <button class="ibtn" id="oMenu" aria-label="منو">⋮</button>
   </header>
   <main class="scroll" id="oScroll">
@@ -61,6 +61,7 @@
     <div class="dockbtns">
       <button class="dbtn" id="oGallery" aria-label="از گالری">🖼<small>گالری</small></button>
       <button class="dbtn" id="oAdd" aria-label="ردیف بدون عکس">＋<small>ردیف</small></button>
+      <button class="dbtn wa" id="oWa" aria-label="ارسال در واتساپ">⇪<small>واتساپ</small></button>
       <button class="shoot" id="oCam" aria-label="عکاسی سریع"><span></span></button>
     </div>
   </footer>
@@ -134,11 +135,20 @@
 <div class="sheet" id="sExport" hidden>
   <div class="grab"></div>
   <h3>خروجی سفارش</h3>
+  <div class="exsec">واتساپ</div>
   <div class="exgrid">
-    <button class="exbtn" data-ex="pdf-share"><b>PDF</b><span>ارسال (واتساپ…)</span></button>
-    <button class="exbtn" data-ex="pdf-save"><b>PDF</b><span>ذخیره در Downloads</span></button>
-    <button class="exbtn xl" data-ex="xlsx-share"><b>Excel</b><span>ارسال</span></button>
-    <button class="exbtn xl" data-ex="xlsx-save"><b>Excel</b><span>ذخیره در Downloads</span></button>
+    <button class="exbtn wa" data-ex="pdf-wa"><b>PDF</b><span>ارسال در واتساپ</span></button>
+    <button class="exbtn wa" data-ex="xlsx-wa"><b>Excel</b><span>ارسال در واتساپ</span></button>
+  </div>
+  <div class="exsec">ارسال با برنامهٔ دیگر (تلگرام، ایمیل…)</div>
+  <div class="exgrid">
+    <button class="exbtn" data-ex="pdf-share"><b>PDF</b><span>ارسال…</span></button>
+    <button class="exbtn xl" data-ex="xlsx-share"><b>Excel</b><span>ارسال…</span></button>
+  </div>
+  <div class="exsec">ذخیره در گوشی (Downloads)</div>
+  <div class="exgrid">
+    <button class="exbtn" data-ex="pdf-save"><b>PDF</b><span>ذخیره</span></button>
+    <button class="exbtn xl" data-ex="xlsx-save"><b>Excel</b><span>ذخیره</span></button>
     <button class="exbtn pr" data-ex="print"><b>🖨</b><span>چاپ</span></button>
     <button class="exbtn js" data-ex="json"><b>{ }</b><span>فایل پشتیبان سفارش</span></button>
   </div>

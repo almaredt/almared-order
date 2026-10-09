@@ -228,6 +228,15 @@ public class MainActivity extends Activity {
         }
     }
 
+    private boolean isInstalled(String pkg) {
+        try {
+            getPackageManager().getPackageInfo(pkg, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
     private boolean hasCameraPermission() {
         return checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
     }
@@ -306,6 +315,36 @@ public class MainActivity extends Activity {
                 send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 runOnUiThread(() -> startActivity(Intent.createChooser(send, "ارسال " + name)));
                 return "OK";
+            } catch (Exception e) {
+                return "ERR:" + e.getMessage();
+            }
+        }
+
+        /** Sends the file straight to WhatsApp (or WhatsApp Business). Returns "OK", "NOWA" or "ERR:message". */
+        @JavascriptInterface
+        public String shareToWhatsApp(String base64, String name, String mime) {
+            try {
+                byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
+                File dir = new File(getCacheDir(), "shared");
+                if (!dir.exists()) dir.mkdirs();
+                File f = new File(dir, name);
+                try (FileOutputStream os = new FileOutputStream(f)) { os.write(bytes); }
+                Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".files", f);
+                String[] pkgs = {"com.whatsapp", "com.whatsapp.w4b"};
+                for (String pkg : pkgs) {
+                    if (!isInstalled(pkg)) continue;
+                    final Intent send = new Intent(Intent.ACTION_SEND);
+                    send.setType(mime);
+                    send.setPackage(pkg);
+                    send.putExtra(Intent.EXTRA_STREAM, uri);
+                    send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    runOnUiThread(() -> {
+                        try { startActivity(send); }
+                        catch (ActivityNotFoundException e) { Toast.makeText(MainActivity.this, "واتساپ باز نشد", Toast.LENGTH_SHORT).show(); }
+                    });
+                    return "OK";
+                }
+                return "NOWA";
             } catch (Exception e) {
                 return "ERR:" + e.getMessage();
             }

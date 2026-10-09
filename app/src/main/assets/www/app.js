@@ -43,14 +43,6 @@ function normalizeOrder(d) {
   o.rows = (d.rows || []).map(r => Object.assign(newRow(), r, { id: uid() }));
   return o;
 }
-const SAMPLE = [['TZR A1',6,25,520000],['TZR A3',6,25,465000],['TZR B1',4,25,611875],['TZR B2',6,25,488125],['TZR B3',9,25,365500],['TZR B4',12,20,312000],['TZR C1',4,101,556875],['TZR C2',6,20,433125],['TZR D1',6,25,455250],['TZR E7',8,150,408375],['TZR E9',20,20,198000],['TZR E11',8,72,451500],['TZR E12',12,150,232750],['TZR P3',4,40,1336500],['TZR P4',4,40,1228500],['TZR P11',6,50,1051500],['TZR P12',12,40,783000]];
-function sampleOrder() {
-  return normalizeOrder({
-    meta: { title: 'OR INVOICE', buyer: 'ALMARED TRADING L.L.C', pobox: '15043', invNo: '123', date: '2026/SEP/17', cont1: 'UNSU009384-3', cont2: 'UNSU005469-9', cur: 'T' },
-    transit: 617043000, commPct: 3,
-    rows: SAMPLE.map(([code, unit, ctn, price]) => ({ code, unit, ctn, price, desc: 'PLASTIC TOYS' }))
-  });
-}
 function nextCode(c) {
   const m = String(c || '').match(/^(.*?)(\d+)(\D*)$/);
   if (!m) return c || '';
@@ -192,8 +184,7 @@ $('hNew').onclick = async () => {
 };
 $('hMenu').onclick = () => menu([
   { icon: '⚙', label: 'پیش‌فرض‌ها (خریدار، ارز، کمیسیون…)', fn: openSettings },
-  { icon: '📂', label: 'باز کردن فایل پشتیبان (.json)', fn: () => { $('fJson').value = ''; $('fJson').click(); } },
-  { icon: '🧾', label: 'افزودن نمونه فاکتور ۱۲۳', fn: async () => { const o = sampleOrder(); ORDERS.push(o); await DB.put(o).catch(() => {}); renderHome(); toast('نمونه اضافه شد'); } }
+  { icon: '📂', label: 'باز کردن فایل پشتیبان (.json)', fn: () => { $('fJson').value = ''; $('fJson').click(); } }
 ]);
 $('fJson').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
@@ -590,13 +581,18 @@ async function deliver(blob, name, mode) {
   const mime = blob.type || 'application/octet-stream';
   if (IS_APP) {
     const b64 = await blobToB64(blob);
-    if (mode === 'share') { const r = window.AndroidApp.shareFile(b64, name, mime); if (r && r.indexOf('ERR') === 0) toast('ارسال نشد: ' + r.slice(4)); return; }
+    if (mode === 'share' || mode === 'wa') {
+      const r = mode === 'wa' && window.AndroidApp.shareToWhatsApp ? window.AndroidApp.shareToWhatsApp(b64, name, mime) : window.AndroidApp.shareFile(b64, name, mime);
+      if (r === 'NOWA') toast('واتساپ روی این گوشی نصب نیست — از «ارسال…» استفاده کنید');
+      else if (r && r.indexOf('ERR') === 0) toast('ارسال نشد: ' + r.slice(4));
+      return;
+    }
     const r = window.AndroidApp.saveFile(b64, name, mime);
     if (r && r.indexOf('ERR') !== 0) toast('ذخیره شد در Downloads: ' + name, 'باز کن', () => window.AndroidApp.openFile(r, mime));
     else toast('ذخیره نشد: ' + (r || '').slice(4));
     return;
   }
-  if (mode === 'share' && navigator.canShare) {
+  if ((mode === 'share' || mode === 'wa') && navigator.canShare) {
     const f = new File([blob], name, { type: mime });
     if (navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f], title: name }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
   }
@@ -612,9 +608,13 @@ function doPrint(o) {
   f.srcdoc = html;
 }
 $('oExport').onclick = () => { if (!CUR.rows.length) return toast('اول کالا اضافه کنید'); openSheet('sExport'); };
-$('sExport').addEventListener('click', async e => {
+$('oWa').onclick = () => { if (!CUR.rows.length) return toast('اول کالا اضافه کنید'); runExport('pdf-wa'); };
+$('sExport').addEventListener('click', e => {
   const b = e.target.closest('[data-ex]'); if (!b) return;
-  const ex = b.dataset.ex, o = CUR; closeSheet(); save(true);
+  closeSheet(); runExport(b.dataset.ex);
+});
+async function runExport(ex) {
+  const o = CUR; save(true);
   try {
     if (ex === 'print') { doPrint(o); return; }
     if (ex === 'json') {
@@ -630,7 +630,7 @@ $('sExport').addEventListener('click', async e => {
   } catch (err) {
     busy(false); console.error(err); toast('خطا در ساخت فایل: ' + (err && err.message || err));
   }
-});
+}
 
 /* =============================================================
    BACK BUTTON (called by Android) + boot
@@ -647,8 +647,10 @@ window.addEventListener('pagehide', () => save(true));
 (async function boot() {
   try { await DB.open(); ORDERS = await DB.all(); }
   catch (e) { toast('حافظهٔ دائمی در دسترس نیست — اطلاعات بعد از بستن پاک می‌شود'); }
-  let seeded = false; try { seeded = localStorage.getItem('ol.seeded') === '1'; } catch (e) {}
-  if (!ORDERS.length && !seeded) { const o = sampleOrder(); ORDERS.push(o); await DB.put(o).catch(() => {}); try { localStorage.setItem('ol.seeded', '1'); } catch (e) {} }
+  // remove the example invoice 123 that version 1.0 added on first run (only if it was never given photos)
+  const isOldSample = o => o.meta && o.meta.invNo === '123' && o.meta.cont1 === 'UNSU009384-3' && o.rows.length <= 17 && !o.rows.some(r => r.img);
+  for (const o of ORDERS.filter(isOldSample)) await DB.del(o.id).catch(() => {});
+  ORDERS = ORDERS.filter(o => !isOldSample(o));
   renderHome(); showView('vHome');
 })();
 
