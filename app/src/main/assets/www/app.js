@@ -8,15 +8,32 @@ const IS_APP = !!window.AndroidApp;
 // Persian (۰-۹) and Arabic (٠-٩) digits -> English digits, Persian decimal sign -> '.'
 const toEnDigits = v => String(v ?? '').replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776).replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632).replace(/٫/g, '.').replace(/٬/g, ',');
 const num = v => { const n = parseFloat(toEnDigits(v).replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : 0; };
+// 1234567.5 -> 1,234,567.5 while typing (keeps a trailing '.' and typed decimals)
+function groupThousands(v) {
+  let t = String(v).replace(/[^0-9.]/g, '');
+  const dot = t.indexOf('.');
+  let int = dot < 0 ? t : t.slice(0, dot), dec = dot < 0 ? null : t.slice(dot + 1).replace(/\./g, '');
+  int = int.replace(/^0+(?=\d)/, '');
+  int = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return dec === null ? int : (int || '0') + '.' + dec;
+}
 // every input field: whatever keyboard is used, digits are stored and shown as 0-9
 document.addEventListener('input', e => {
   const el = e.target;
   if (!el || el.tagName !== 'INPUT' || el.type === 'file' || el.type === 'checkbox') return;
-  const fixed = toEnDigits(el.value);
+  let fixed = toEnDigits(el.value);
+  if (el.classList.contains('num')) fixed = groupThousands(fixed);
   if (fixed !== el.value) {
     let pos = null; try { pos = el.selectionStart; } catch (x) {}
+    // keep the caret after the same number of digits it was after before re-formatting
+    const sig = c => /[0-9.]/.test(c);
+    const before = pos == null ? 0 : [...toEnDigits(el.value.slice(0, pos))].filter(sig).length;
     el.value = fixed;
-    if (pos != null) { try { el.setSelectionRange(pos, pos); } catch (x) {} }
+    if (pos != null) {
+      let p = 0, seen = 0;
+      while (p < fixed.length && seen < before) { if (sig(fixed[p])) seen++; p++; }
+      try { el.setSelectionRange(p, p); } catch (x) {}
+    }
   }
 }, true);
 const fmt = n => (Math.round((+n || 0) * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 });
@@ -141,7 +158,6 @@ function showView(id) {
 }
 
 /* numeric inputs: raw while editing, formatted at rest */
-document.addEventListener('focusin', e => { const el = e.target; if (el.classList && el.classList.contains('num')) el.value = el.value ? String(num(el.value)) : ''; });
 document.addEventListener('focusout', e => { const el = e.target; if (el.classList && el.classList.contains('num')) el.value = el.value ? fmt(num(el.value)) : ''; });
 const setNum = (el, v) => { el.value = v ? fmt(v) : ''; };
 
@@ -434,7 +450,7 @@ $('camShutter').onclick = () => {
     pendingRow = r;
     $('qThumb').src = img;
     $('q_code').value = prev ? nextCode(prev.code) : '';
-    $('q_unit').value = prev && prev.unit ? prev.unit : '';
+    $('q_unit').value = prev && prev.unit ? fmt(prev.unit) : '';
     $('q_ctn').value = ''; $('q_price').value = '';
     $('camBot').hidden = true; $('camQuick').hidden = false;
     setTimeout(() => { $('q_ctn').value === '' && $('q_code').value ? $('q_unit').focus() : $('q_code').focus(); }, 60);
