@@ -531,7 +531,8 @@ async function makeXlsx(o) {
   ws.mergeCells('A1:I1'); ws.getCell('A1').value = m.title; ws.getCell('A1').font = { bold: true, size: 18 }; ws.getCell('A1').alignment = { horizontal: 'center' }; ws.getRow(1).height = 28;
   [[2, 'BUYER:' + m.buyer, m.title + ' NO:' + m.invNo], [3, 'P.O BOX:' + m.pobox, 'DATE:' + m.date], [4, m.cont1 ? 'Container No:' + m.cont1 : '', m.cont2 ? 'Container No:' + m.cont2 : '']]
     .forEach(([r, a, b]) => { ws.mergeCells(`A${r}:E${r}`); ws.mergeCells(`G${r}:I${r}`); ws.getCell('A' + r).value = a; ws.getCell('G' + r).value = b; ws.getCell('A' + r).font = { bold: true }; ws.getCell('G' + r).font = { bold: true }; });
-  const H = 6;
+  const H = 6, CELL_W = 103, CELL_H = 64; // picture column ≈ 103 px wide, data rows 48 pt ≈ 64 px
+  const sizes = await Promise.all(o.rows.map(r => r.img ? loadImage(r.img).then(im => ({ w: im.naturalWidth, h: im.naturalHeight })).catch(() => null) : null));
   ws.getRow(H).values = ['No', 'Picture', 'Code', 'Description', 'Unit', 'Ctn', 'QTY', 'Price ' + (m.cur || ''), 'Total Price'];
   ws.getRow(H).eachCell(c => { c.fill = fill('FFED7D31'); c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.border = box; c.alignment = { horizontal: 'center', vertical: 'middle' }; });
   ws.getRow(H).height = 22;
@@ -544,8 +545,16 @@ async function makeXlsx(o) {
     row.getCell(3).font = { bold: true }; row.getCell(5).font = { bold: true }; row.getCell(4).font = { bold: true, size: 9 };
     [5, 6, 7, 8, 9].forEach(c => row.getCell(c).numFmt = NF);
     if (r.img) {
+      // two-cell anchor (tl + br) so Google Sheets / WPS / Excel mobile all show the picture
       const id = wb.addImage({ base64: r.img, extension: 'jpeg' });
-      ws.addImage(id, { tl: { col: 1.08, row: n - 1 + 0.08 }, ext: { width: 88, height: 56 }, editAs: 'oneCell' });
+      const sz = sizes[i] || { w: 4, h: 3 };
+      const boxW = 96, boxH = 58, k = Math.min(boxW / sz.w, boxH / sz.h);
+      const w = sz.w * k, h = sz.h * k, x = (CELL_W - w) / 2, y = (CELL_H - h) / 2, EMU = 9525; // exact EMU offsets inside cell B
+      ws.addImage(id, {
+        tl: { nativeCol: 1, nativeColOff: Math.round(x * EMU), nativeRow: n - 1, nativeRowOff: Math.round(y * EMU) },
+        br: { nativeCol: 1, nativeColOff: Math.round((x + w) * EMU), nativeRow: n - 1, nativeRowOff: Math.round((y + h) * EMU) },
+        editAs: 'oneCell'
+      });
     }
   });
   const last = H + Math.max(o.rows.length, 1), g = last + 1;
