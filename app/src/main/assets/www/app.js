@@ -608,6 +608,14 @@ function doPrint(o) {
   f.srcdoc = html;
 }
 $('oExport').onclick = () => { if (!CUR.rows.length) return toast('اول کالا اضافه کنید'); openSheet('sExport'); };
+$('oXls').onclick = () => {
+  if (!CUR.rows.length) return toast('اول کالا اضافه کنید');
+  menu([
+    { icon: '🟢', label: 'ارسال Excel در واتساپ', fn: () => runExport('xlsx-wa') },
+    { icon: '↗', label: 'ارسال Excel با برنامهٔ دیگر (تلگرام، ایمیل…)', fn: () => runExport('xlsx-share') },
+    { icon: '⤓', label: 'ذخیرهٔ Excel در گوشی (Downloads)', fn: () => runExport('xlsx-save') }
+  ]);
+};
 $('oWa').onclick = () => { if (!CUR.rows.length) return toast('اول کالا اضافه کنید'); runExport('pdf-wa'); };
 $('sExport').addEventListener('click', e => {
   const b = e.target.closest('[data-ex]'); if (!b) return;

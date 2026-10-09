@@ -202,3 +202,7 @@ label input.manual{color:var(--orange-d);border-color:var(--orange)}
 .exbtn.wa{background:#DDF5E4}.exbtn.wa b{color:#128C4A}
 .dbtn.wa{background:#DDF5E4;color:#128C4A}
 .dbtn.wa small{color:#128C4A}
+.dbtn.wa,.dbtn.xl{font-size:14px;font-weight:800;letter-spacing:.5px}
+.dbtn.xl{background:#E3F1E8;color:#1E6B41}
+.dbtn.xl small{color:#1E6B41}
+.dockbtns{gap:8px}
