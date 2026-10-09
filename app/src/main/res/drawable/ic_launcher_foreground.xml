@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 108dp canvas, safe zone is the central 66dp. A sheet with a photo cell and three table rows. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- paper -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M35,26 L73,26 Q77,26 77,30 L77,78 Q77,82 73,82 L35,82 Q31,82 31,78 L31,30 Q31,26 35,26 Z" />
+    <!-- header band -->
+    <path android:fillColor="#1D1916" android:pathData="M31,30 Q31,26 35,26 L73,26 Q77,26 77,30 L77,36 L31,36 Z" />
+    <!-- photo cells -->
+    <path android:fillColor="#ED7D31" android:pathData="M36,41 L46,41 L46,49 L36,49 Z" />
+    <path android:fillColor="#FCE4D6" android:pathData="M36,54 L46,54 L46,62 L36,62 Z" />
+    <path android:fillColor="#ED7D31" android:pathData="M36,67 L46,67 L46,75 L36,75 Z" />
+    <!-- row lines -->
+    <path android:fillColor="#1D1916" android:pathData="M50,43 L72,43 L72,46 L50,46 Z" />
+    <path android:fillColor="#B9AEA6" android:pathData="M50,56 L66,56 L66,59 L50,59 Z" />
+    <path android:fillColor="#1D1916" android:pathData="M50,69 L70,69 L70,72 L50,72 Z" />
+</vector>

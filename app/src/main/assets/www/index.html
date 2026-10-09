@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#1d1916">
+<title>ALMARED Order</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ============ HOME: list of orders ============ -->
+<section class="view" id="vHome">
+  <header class="appbar">
+    <div class="brand"><i></i><div><b>ALMARED Order</b><small>اوردر لیست</small></div></div>
+    <button class="ibtn" id="hMenu" aria-label="منو">⋮</button>
+  </header>
+  <div class="searchbar"><input id="hSearch" type="search" placeholder="جستجو: شماره فاکتور، کانتینر، کد…" autocomplete="off"></div>
+  <main class="scroll" id="hList"></main>
+  <button class="fab" id="hNew"><span>+</span> سفارش جدید</button>
+</section>
+
+<!-- ============ ORDER editor ============ -->
+<section class="view" id="vOrder" hidden>
+  <header class="appbar">
+    <button class="ibtn" id="oBack" aria-label="بازگشت">→</button>
+    <div class="ttl"><b id="oTitle">—</b><small id="oSub"></small></div>
+    <button class="ibtn" id="oExport" aria-label="خروجی">⤓</button>
+    <button class="ibtn" id="oMenu" aria-label="منو">⋮</button>
+  </header>
+  <main class="scroll" id="oScroll">
+    <details class="metacard" id="oMeta">
+      <summary><span>مشخصات فاکتور</span><em id="oMetaSum"></em></summary>
+      <div class="metagrid" dir="ltr">
+        <label class="full"><span>Title</span><input id="mt_title" data-meta="title"></label>
+        <label><span>Invoice No</span><input id="mt_invNo" data-meta="invNo" inputmode="numeric"></label>
+        <label><span>Date</span><input id="mt_date" data-meta="date"></label>
+        <label class="full"><span>Buyer</span><input id="mt_buyer" data-meta="buyer"></label>
+        <label><span>P.O Box</span><input id="mt_pobox" data-meta="pobox"></label>
+        <label><span>Currency</span><input id="mt_cur" data-meta="cur" placeholder="T / AED / $"></label>
+        <label><span>Container No 1</span><input id="mt_cont1" data-meta="cont1" autocapitalize="characters"></label>
+        <label><span>Container No 2</span><input id="mt_cont2" data-meta="cont2" autocapitalize="characters"></label>
+        <label><span>Tranzit &amp; cost</span><input id="mt_transit" class="num" inputmode="decimal"></label>
+        <label><span>Commission %</span><input id="mt_comm" inputmode="decimal"></label>
+      </div>
+    </details>
+    <div class="items" id="oItems"></div>
+    <div class="empty" id="oEmpty" hidden>
+      <div class="empty-ico">📷</div>
+      <b>هنوز کالایی اضافه نشده</b>
+      <p>با دکمهٔ دوربین پایین صفحه، عکس بگیرید؛ هر عکس یک ردیف می‌شود.</p>
+    </div>
+    <div class="spacer"></div>
+  </main>
+  <footer class="dock">
+    <button class="totals" id="oTotals" dir="ltr">
+      <span><small>CTN</small><b id="tCtn">0</b></span>
+      <span><small>QTY</small><b id="tQty">0</b></span>
+      <span class="big"><small>TOTAL</small><b id="tFinal">0</b></span>
+    </button>
+    <div class="dockbtns">
+      <button class="dbtn" id="oGallery" aria-label="از گالری">🖼<small>گالری</small></button>
+      <button class="dbtn" id="oAdd" aria-label="ردیف بدون عکس">＋<small>ردیف</small></button>
+      <button class="shoot" id="oCam" aria-label="عکاسی سریع"><span></span></button>
+    </div>
+  </footer>
+</section>
+
+<!-- ============ CAMERA (rapid capture) ============ -->
+<section class="view cam" id="vCam" hidden>
+  <video id="camVideo" playsinline muted autoplay></video>
+  <div class="camflash" id="camFlash"></div>
+  <div class="camtop">
+    <button class="cbtn" id="camClose" aria-label="بستن">✕</button>
+    <div class="camcount" id="camCount">0 عکس</div>
+    <button class="cbtn" id="camTorch" aria-label="فلاش" hidden>⚡</button>
+  </div>
+  <div class="camquick" id="camQuick" hidden dir="ltr">
+    <div class="qhead"><img id="qThumb" alt=""><div><b>جزئیات این کالا</b><small>اختیاری — می‌توانید بعداً پر کنید</small></div></div>
+    <div class="qgrid">
+      <label class="full"><span>Code</span><input id="q_code" autocapitalize="characters" autocomplete="off"></label>
+      <label><span>Unit</span><input id="q_unit" inputmode="decimal"></label>
+      <label><span>Ctn</span><input id="q_ctn" inputmode="decimal"></label>
+      <label class="full"><span>Price</span><input id="q_price" inputmode="decimal"></label>
+    </div>
+    <div class="qbtns" dir="rtl">
+      <button class="btn pri" id="qNext">ثبت و عکس بعدی 📷</button>
+      <button class="btn ghost" id="qDone">ثبت و پایان</button>
+    </div>
+  </div>
+  <div class="cambot" id="camBot">
+    <button class="camthumb" id="camThumb" aria-label="آخرین عکس"></button>
+    <button class="shutter" id="camShutter" aria-label="گرفتن عکس"><span></span></button>
+    <label class="camtoggle"><input type="checkbox" id="camAsk" checked><span>ورود جزئیات</span></label>
+  </div>
+  <div class="camerr" id="camErr" hidden>
+    <b>دوربین در دسترس نیست</b>
+    <p id="camErrMsg">اجازهٔ دوربین را بدهید یا از دوربین گوشی استفاده کنید.</p>
+    <button class="btn pri" id="camFallback">باز کردن دوربین گوشی</button>
+  </div>
+</section>
+
+<!-- ============ SHEETS ============ -->
+<div class="scrim" id="scrim" hidden></div>
+
+<div class="sheet" id="sItem" hidden>
+  <div class="grab"></div>
+  <div class="itemhead">
+    <button class="photo" id="iPhoto" aria-label="عکس"></button>
+    <div class="photoacts">
+      <button class="chip" id="iRetake">📷 عکس جدید</button>
+      <button class="chip" id="iPick">🖼 از گالری</button>
+      <button class="chip warn" id="iNoPhoto">حذف عکس</button>
+    </div>
+  </div>
+  <div class="formgrid" dir="ltr">
+    <label><span>Code</span><input id="i_code" autocapitalize="characters" autocomplete="off"></label>
+    <label><span>Description</span><input id="i_desc"></label>
+    <label><span>Unit</span><input id="i_unit" class="num" inputmode="decimal"></label>
+    <label><span>Ctn</span><input id="i_ctn" class="num" inputmode="decimal"></label>
+    <label><span>QTY <em id="i_qtyHint">= Unit × Ctn</em></span><input id="i_qty" class="num" inputmode="decimal"></label>
+    <label><span>Price <em id="i_cur"></em></span><input id="i_price" class="num" inputmode="decimal"></label>
+  </div>
+  <div class="itemtotal" dir="ltr"><span>Total Price</span><b id="i_total">0</b></div>
+  <div class="sheetbtns">
+    <button class="btn pri" id="iDone">تأیید</button>
+    <button class="ibtn sm" id="iUp" aria-label="بالا">↑</button>
+    <button class="ibtn sm" id="iDown" aria-label="پایین">↓</button>
+    <button class="ibtn sm" id="iDup" aria-label="کپی">⧉</button>
+    <button class="ibtn sm warn" id="iDel" aria-label="حذف">🗑</button>
+  </div>
+</div>
+
+<div class="sheet" id="sExport" hidden>
+  <div class="grab"></div>
+  <h3>خروجی سفارش</h3>
+  <div class="exgrid">
+    <button class="exbtn" data-ex="pdf-share"><b>PDF</b><span>ارسال (واتساپ…)</span></button>
+    <button class="exbtn" data-ex="pdf-save"><b>PDF</b><span>ذخیره در Downloads</span></button>
+    <button class="exbtn xl" data-ex="xlsx-share"><b>Excel</b><span>ارسال</span></button>
+    <button class="exbtn xl" data-ex="xlsx-save"><b>Excel</b><span>ذخیره در Downloads</span></button>
+    <button class="exbtn pr" data-ex="print"><b>🖨</b><span>چاپ</span></button>
+    <button class="exbtn js" data-ex="json"><b>{ }</b><span>فایل پشتیبان سفارش</span></button>
+  </div>
+  <p class="note">فایل پشتیبان (.json) را می‌توانید در نسخهٔ کامپیوتری یا گوشی دیگر باز کنید.</p>
+</div>
+
+<div class="sheet" id="sMenu" hidden>
+  <div class="grab"></div>
+  <div class="menulist" id="menuList"></div>
+</div>
+
+<div class="sheet" id="sConfirm" hidden>
+  <div class="grab"></div>
+  <h3 id="cfTitle"></h3>
+  <p class="cfmsg" id="cfMsg"></p>
+  <div class="sheetbtns">
+    <button class="btn danger" id="cfYes">بله</button>
+    <button class="btn ghost" id="cfNo">انصراف</button>
+  </div>
+</div>
+
+<div class="sheet" id="sSettings" hidden>
+  <div class="grab"></div>
+  <h3>پیش‌فرض‌های سفارش جدید</h3>
+  <div class="formgrid" dir="ltr">
+    <label class="full"><span>Title</span><input id="st_title"></label>
+    <label class="full"><span>Buyer</span><input id="st_buyer"></label>
+    <label><span>P.O Box</span><input id="st_pobox"></label>
+    <label><span>Currency</span><input id="st_cur"></label>
+    <label><span>Description</span><input id="st_desc"></label>
+    <label><span>Commission %</span><input id="st_comm" inputmode="decimal"></label>
+  </div>
+  <div class="sheetbtns"><button class="btn pri" id="stSave">ذخیره</button></div>
+</div>
+
+<div class="busy" id="busy" hidden><div class="spin"></div><span id="busyMsg">در حال ساخت…</span></div>
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastAct" hidden></button></div>
+
+<input type="file" id="fCam" accept="image/*" capture="environment" hidden>
+<input type="file" id="fGal" accept="image/*" multiple hidden>
+<input type="file" id="fOne" accept="image/*" hidden>
+<input type="file" id="fJson" accept=".json,application/json,text/plain" hidden>
+
+<div id="sheetHold" aria-hidden="true"></div>
+
+<script src="lib/exceljs.min.js"></script>
+<script src="lib/html2canvas.min.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
