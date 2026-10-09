@@ -5,7 +5,20 @@
 
 const $ = id => document.getElementById(id);
 const IS_APP = !!window.AndroidApp;
-const num = v => { const n = parseFloat(String(v ?? '').replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : 0; };
+// Persian (۰-۹) and Arabic (٠-٩) digits -> English digits, Persian decimal sign -> '.'
+const toEnDigits = v => String(v ?? '').replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776).replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632).replace(/٫/g, '.').replace(/٬/g, ',');
+const num = v => { const n = parseFloat(toEnDigits(v).replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : 0; };
+// every input field: whatever keyboard is used, digits are stored and shown as 0-9
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (!el || el.tagName !== 'INPUT' || el.type === 'file' || el.type === 'checkbox') return;
+  const fixed = toEnDigits(el.value);
+  if (fixed !== el.value) {
+    let pos = null; try { pos = el.selectionStart; } catch (x) {}
+    el.value = fixed;
+    if (pos != null) { try { el.setSelectionRange(pos, pos); } catch (x) {} }
+  }
+}, true);
 const fmt = n => (Math.round((+n || 0) * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 });
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -668,6 +681,13 @@ window.addEventListener('pagehide', () => save(true));
   const isOldSample = o => o.meta && o.meta.invNo === '123' && o.meta.cont1 === 'UNSU009384-3' && o.rows.length <= 17 && !o.rows.some(r => r.img);
   for (const o of ORDERS.filter(isOldSample)) await DB.del(o.id).catch(() => {});
   ORDERS = ORDERS.filter(o => !isOldSample(o));
+  // older data may contain Persian digits typed before v1.4 — store them as English digits
+  for (const o of ORDERS) {
+    const before = JSON.stringify([o.meta, o.rows.map(r => [r.code, r.desc])]);
+    Object.keys(o.meta).forEach(k => { if (typeof o.meta[k] === 'string') o.meta[k] = toEnDigits(o.meta[k]); });
+    o.rows.forEach(r => { r.code = toEnDigits(r.code); r.desc = toEnDigits(r.desc); });
+    if (JSON.stringify([o.meta, o.rows.map(r => [r.code, r.desc])]) !== before) await DB.put(o).catch(() => {});
+  }
   renderHome(); showView('vHome');
 })();
 
