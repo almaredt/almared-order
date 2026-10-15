@@ -38,6 +38,27 @@ document.addEventListener('input', e => {
 }, true);
 const fmt = n => (Math.round((+n || 0) * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 });
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ---------------- currencies ---------------- */
+// T = Toman, AED = UAE Dirham (shown with the new official Dirham sign)
+const CURRENCIES = [
+  { code: 'T', label: 'T — تومان' },
+  { code: 'AED', label: 'AED — درهم امارات' }
+];
+const DIRHAM_PATH = 'm88.3 1c0.4 0.6 2.6 3.3 4.7 5.9 15.3 18.2 26.8 47.8 33 85.1 4.1 24.5 4.3 32.2 4.3 125.6v87h-41.8c-38.2 0-42.6-0.2-50.1-1.7-11.8-2.5-24-9.2-32.2-17.8-6.5-6.9-6.3-7.3-5.9 13.6 0.5 17.3 0.7 19.2 3.2 28.6 4 14.9 9.5 26 17.8 35.9 11.3 13.6 22.8 21.2 39.2 26.3 3.5 1 10.9 1.4 37.1 1.6l32.7 0.5v43.3 43.4l-46.1-0.3-46.3-0.3-8-3.2c-9.5-3.8-13.8-6.6-23.1-14.9l-6.8-6.1 0.4 19.1c0.5 17.7 0.6 19.7 3.1 28.7 8.7 31.8 29.7 54.5 57.4 61.9 6.9 1.9 9.6 2 38.5 2.4l30.9 0.4v89.6c0 54.1-0.3 94-0.8 100.8-0.5 6.2-2.1 17.8-3.5 25.9-6.5 37.3-18.2 65.4-35 83.6l-3.4 3.7h169.1c101.1 0 176.7-0.4 187.8-0.9 19.5-1 63-5.3 72.8-7.4 3.1-0.6 8.9-1.5 12.7-2.1 8.1-1.2 21.5-4 40.8-8.9 27.2-6.8 52-15.3 76.3-26.1 7.6-3.4 29.4-14.5 35.2-18 3.1-1.8 6.8-4 8.2-4.7 3.9-2.1 10.4-6.3 19.9-13.1 4.7-3.4 9.4-6.7 10.4-7.4 4.2-2.8 18.7-14.9 25.3-21 25.1-23.1 46.1-48.8 62.4-76.3 2.3-4 5.3-9 6.6-11.1 3.3-5.6 16.9-33.6 18.2-37.8 0.6-1.9 1.4-3.9 1.8-4.3 2.6-3.4 17.6-50.6 19.4-60.9 0.6-3.3 0.9-3.8 3.4-4.3 1.6-0.3 24.9-0.3 51.8-0.1 53.8 0.4 53.8 0.4 65.7 5.9 6.7 3.1 8.7 4.5 16.1 11.2 9.7 8.7 8.8 10.1 8.2-11.7-0.4-12.8-0.9-20.7-1.8-23.9-3.4-12.3-4.2-14.9-7.2-21.1-9.8-21.4-26.2-36.7-47.2-44l-8.2-3-33.4-0.4-33.3-0.5 0.4-11.7c0.4-15.4 0.4-45.9-0.1-61.6l-0.4-12.6 44.6-0.2c38.2-0.2 45.3 0 49.5 1.1 12.6 3.5 21.1 8.3 31.5 17.8l5.8 5.4v-14.8c0-17.6-0.9-25.4-4.5-37-7.1-23.5-21.1-41-41.1-51.8-13-7-13.8-7.2-58.5-7.5-26.2-0.2-39.9-0.6-40.6-1.2-0.6-0.6-1.1-1.6-1.1-2.4 0-0.8-1.5-7.1-3.5-13.9-23.4-82.7-67.1-148.4-131-197.1-8.7-6.7-30-20.8-38.6-25.6-3.3-1.9-6.9-3.9-7.8-4.5-4.2-2.3-28.3-14.1-34.3-16.6-3.6-1.6-8.3-3.6-10.4-4.4-35.3-15.3-94.5-29.8-139.7-34.3-7.4-0.7-17.2-1.8-21.7-2.2-20.4-2.3-48.7-2.6-209.4-2.6-135.8 0-169.9 0.3-169.4 1zm330.7 43.3c33.8 2 54.6 4.6 78.9 10.5 74.2 17.6 126.4 54.8 164.3 117 3.5 5.8 18.3 36 20.5 42.1 10.5 28.3 15.6 45.1 20.1 67.3 1.1 5.4 2.6 12.6 3.3 16 0.7 3.3 1 6.4 0.7 6.7-0.5 0.4-100.9 0.6-223.3 0.5l-222.5-0.2-0.3-128.5c-0.1-70.6 0-129.3 0.3-130.4l0.4-1.9h71.1c39 0 78 0.4 86.5 0.9zm297.5 350.3c0.7 4.3 0.7 77.3 0 80.9l-0.6 2.7-227.5-0.2-227.4-0.3-0.2-42.4c-0.2-23.3 0-42.7 0.2-43.1 0.3-0.5 97.2-0.8 227.7-0.8h227.2zm-10.2 171.7c0.5 1.5-1.9 13.8-6.8 33.8-5.6 22.5-13.2 45.2-20.9 62-3.8 8.6-13.3 27.2-15.6 30.7-1.1 1.6-4.3 6.7-7.1 11.2-18 28.2-43.7 53.9-73 72.9-10.7 6.8-32.7 18.4-38.6 20.2-1.2 0.3-2.5 0.9-3 1.3-0.7 0.6-9.8 4-20.4 7.8-19.5 6.9-56.6 14.4-86.4 17.5-19.3 1.9-22.4 2-96.7 2h-76.9v-129.7-129.8l220.9-0.4c121.5-0.2 221.6-0.5 222.4-0.7 0.9-0.1 1.8 0.5 2.1 1.2z';
+const DIRHAM_SVG = `<svg class="dhs" viewBox="0 0 1000 870" fill="currentColor" role="img" aria-label="AED"><path d="${DIRHAM_PATH}"/></svg>`;
+// old orders may say "aed", "Dirham", "درهم" … -> AED
+const normCur = c => { const v = String(c ?? '').trim(); return /^(aed|dhs?|dirham|درهم)$/i.test(v) ? 'AED' : (/^(t|toman|تومان)$/i.test(v) ? 'T' : v); };
+// HTML (app screens + PDF): AED becomes the Dirham sign, anything else is shown as text
+const curHTML = c => normCur(c) === 'AED' ? DIRHAM_SVG : esc(c);
+// plain text (Excel, file names)
+const curText = c => normCur(c) || '';
+function fillCurSelect(sel, value) {
+  const v = normCur(value) || 'T';
+  const list = CURRENCIES.some(x => x.code === v) ? CURRENCIES : CURRENCIES.concat([{ code: v, label: v }]);
+  sel.innerHTML = list.map(x => `<option value="${esc(x.code)}">${esc(x.label)}</option>`).join('');
+  sel.value = v;
+}
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const today = () => { const d = new Date(); return d.getFullYear() + '/' + MONTHS[d.getMonth()] + '/' + String(d.getDate()).padStart(2, '0'); };
@@ -201,7 +222,7 @@ function renderHome() {
       <span class="oinfo">
         <span class="t">${esc(o.meta.title)} NO:${esc(o.meta.invNo)}</span>
         <span class="s">${esc(o.meta.date)}${o.meta.cont1 ? ' · ' + esc(o.meta.cont1) : ''}</span>
-        <span class="m"><span><b>${o.rows.length}</b> ردیف</span><span><b>${fmt(t.ctn)}</b> کارتن</span><span><b>${fmt(t.final)}</b> ${esc(o.meta.cur)}</span></span>
+        <span class="m"><span><b>${o.rows.length}</b> ردیف</span><span><b>${fmt(t.ctn)}</b> کارتن</span><span><b>${fmt(t.final)}</b> ${curHTML(o.meta.cur)}</span></span>
       </span></button>`;
   }).join('');
   $('hList').querySelectorAll('.ocard').forEach(b => b.onclick = () => openOrder(b.dataset.id));
@@ -230,7 +251,7 @@ $('fJson').addEventListener('change', e => {
 
 function openSettings() {
   $('st_title').value = SET.title; $('st_buyer').value = SET.buyer; $('st_pobox').value = SET.pobox;
-  $('st_cur').value = SET.cur; $('st_desc').value = SET.desc; $('st_comm').value = SET.comm;
+  fillCurSelect($('st_cur'), SET.cur); $('st_desc').value = SET.desc; $('st_comm').value = SET.comm;
   openSheet('sSettings');
 }
 $('stSave').onclick = () => {
@@ -244,7 +265,7 @@ $('stSave').onclick = () => {
 const META_KEYS = ['title', 'invNo', 'date', 'buyer', 'pobox', 'cur', 'cont1', 'cont2'];
 function openOrder(id, isNew) {
   CUR = ORDERS.find(o => o.id === id); if (!CUR) return;
-  META_KEYS.forEach(k => $('mt_' + k).value = CUR.meta[k] ?? '');
+  META_KEYS.forEach(k => { if (k === 'cur') fillCurSelect($('mt_cur'), CUR.meta.cur); else $('mt_' + k).value = CUR.meta[k] ?? ''; });
   setNum($('mt_transit'), CUR.transit); $('mt_comm').value = CUR.commPct ?? 0;
   $('oMeta').open = !!isNew;
   renderOrderHead(); renderItems(); showView('vOrder');
@@ -256,12 +277,12 @@ function renderOrderHead() {
   $('oSub').innerHTML = `<bdi dir="ltr">${esc(m.date)}</bdi> · ${CUR.rows.length} ردیف`;
   $('oMetaSum').textContent = [m.buyer, m.cont1, m.cont2].filter(Boolean).join(' · ');
 }
-META_KEYS.forEach(k => $('mt_' + k).addEventListener('input', e => { CUR.meta[k] = e.target.value; renderOrderHead(); renderTotals(); save(); }));
+META_KEYS.forEach(k => $('mt_' + k).addEventListener(k === 'cur' ? 'change' : 'input', e => { CUR.meta[k] = e.target.value; if (k === 'cur') renderItems(); else { renderOrderHead(); renderTotals(); } save(); }));
 $('mt_transit').addEventListener('input', e => { CUR.transit = num(e.target.value); renderTotals(); save(); });
 $('mt_comm').addEventListener('input', e => { CUR.commPct = num(e.target.value); renderTotals(); save(); });
 
 function cardHTML(r, i) {
-  const cur = esc(CUR.meta.cur), q = qtyOf(r);
+  const cur = curHTML(CUR.meta.cur), q = qtyOf(r);
   return `<span class="no">${i + 1}</span>
     <span class="pic">${r.img ? `<img src="${r.img}" alt="" loading="lazy">` : '＋'}</span>
     <span class="body">
@@ -288,7 +309,7 @@ function updateCard(i) {
 }
 function renderTotals() {
   const t = totals(CUR);
-  $('tCtn').textContent = fmt(t.ctn); $('tQty').textContent = fmt(t.qty); $('tFinal').textContent = fmt(t.final);
+  $('tCtn').textContent = fmt(t.ctn); $('tQty').textContent = fmt(t.qty); $('tFinal').textContent = fmt(t.final); $('tCur').innerHTML = curHTML(CUR.meta.cur);
 }
 $('oItems').addEventListener('click', e => { const c = e.target.closest('.icard'); if (c) openItem(+c.dataset.i); });
 $('oBack').onclick = goHome;
@@ -296,7 +317,7 @@ function goHome() { save(true); CUR = null; renderHome(); showView('vHome'); }
 $('oAdd').onclick = () => { const r = newRow(); const prev = lastWithCode(); if (prev) { r.code = nextCode(prev.code); r.unit = prev.unit; } CUR.rows.push(r); save(); renderItems(); openItem(CUR.rows.length - 1); };
 $('oGallery').onclick = () => { camTarget = null; $('fGal').value = ''; $('fGal').click(); };
 $('oTotals').onclick = () => {
-  const t = totals(CUR), c = esc(CUR.meta.cur);
+  const t = totals(CUR), c = curHTML(CUR.meta.cur);
   $('menuList').innerHTML = `<div dir="ltr" style="display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums">
     ${[['GRAND TOTAL', t.sum], ['TRANZIT AND COST', t.transit], [`COMMISSION (${fmt(CUR.commPct)}%)`, t.comm]].map(([l, v]) =>
       `<div style="display:flex;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--line)"><span style="color:var(--muted);font-weight:700;font-size:13px">${l}</span><b>${fmt(v)}</b></div>`).join('')}
@@ -328,7 +349,7 @@ function openItem(i) {
   EI = i; const r = CUR.rows[i];
   $('i_code').value = r.code; $('i_desc').value = r.desc;
   setNum($('i_unit'), r.unit); setNum($('i_ctn'), r.ctn); setNum($('i_price'), r.price);
-  $('i_cur').textContent = CUR.meta.cur;
+  $('i_cur').innerHTML = curHTML(CUR.meta.cur);
   fillItemCalc(); fillItemPhoto();
   openSheet('sItem');
 }
@@ -338,7 +359,7 @@ function fillItemCalc() {
   if (document.activeElement !== q) setNum(q, qtyOf(r));
   q.classList.toggle('manual', !!r.qtyManual);
   $('i_qtyHint').textContent = r.qtyManual ? 'دستی' : '= Unit × Ctn';
-  $('i_total').textContent = fmt(totOf(r)) + ' ' + CUR.meta.cur;
+  $('i_total').innerHTML = fmt(totOf(r)) + ' ' + curHTML(CUR.meta.cur);
 }
 ['code', 'desc'].forEach(k => $('i_' + k).addEventListener('input', e => { CUR.rows[EI][k] = e.target.value; updateCard(EI); save(); }));
 ['unit', 'ctn', 'price'].forEach(k => $('i_' + k).addEventListener('input', e => {
@@ -488,6 +509,7 @@ const SHEET_CSS = `
 .pg td.b{font-weight:700}
 .pg td.d{font-size:10.5px;font-weight:700}
 .pg td.r{text-align:right}
+.pg .dhs{display:inline-block;height:.78em;width:auto;vertical-align:-.04em}
 .pg tr.f td{height:26px;font-weight:700}
 .pg tr.f td.l{text-align:left;font-size:12px}
 .pg tr.f.g td.l{font-size:17px;font-weight:400}
@@ -496,7 +518,7 @@ const SHEET_CSS = `
 const COLS = `<colgroup><col style="width:34px"><col style="width:88px"><col style="width:78px"><col style="width:100px"><col style="width:44px"><col style="width:44px"><col style="width:56px"><col style="width:122px"><col style="width:168px"></colgroup>`;
 
 function sheetPages(o) {
-  const m = o.meta, t = totals(o), cur = esc(m.cur);
+  const m = o.meta, t = totals(o), cur = curHTML(m.cur);
   const PH = 1123 - 60 - 24, HEAD = 156, TH = 32, RH = 56, FOOT = 26 * 4 + 6;
   const rows = o.rows.map((r, i) => ({ r, i }));
   const pages = []; let cur_ = [], cap = Math.floor((PH - HEAD - TH) / RH);
@@ -514,7 +536,7 @@ function sheetPages(o) {
   const foot = `<tr class="f g"><td></td><td colspan="4" class="l">GRAND TOTAL</td><td>${fmt(t.ctn)}</td><td>${fmt(t.qty)}</td><td></td><td class="r">${fmt(t.sum)}</td></tr>
     <tr class="f z">${e5}<td colspan="3" class="l">TRANZIT AND COST:</td><td class="r">${fmt(t.transit)}</td></tr>
     <tr class="f">${e5}<td colspan="3" class="l">COMMISSION${num(o.commPct) ? ' (' + fmt(o.commPct) + '%)' : ''}:</td><td class="r">${fmt(t.comm)}</td></tr>
-    <tr class="f z fin">${e5}<td colspan="3" class="l">TOTAL:</td><td class="r">${fmt(t.final)}</td></tr>`;
+    <tr class="f z fin">${e5}<td colspan="3" class="l">TOTAL:</td><td class="r">${fmt(t.final)} ${cur}</td></tr>`;
   const total = pages.length + (footOwn ? 1 : 0);
   const out = pages.map((p, k) => {
     const isLast = k === pages.length - 1;
@@ -562,7 +584,7 @@ async function makeXlsx(o) {
     .forEach(([r, a, b]) => { ws.mergeCells(`A${r}:E${r}`); ws.mergeCells(`G${r}:I${r}`); ws.getCell('A' + r).value = a; ws.getCell('G' + r).value = b; ws.getCell('A' + r).font = { bold: true }; ws.getCell('G' + r).font = { bold: true }; });
   const H = 6, CELL_W = 103, CELL_H = 64; // picture column ≈ 103 px wide, data rows 48 pt ≈ 64 px
   const sizes = await Promise.all(o.rows.map(r => r.img ? loadImage(r.img).then(im => ({ w: im.naturalWidth, h: im.naturalHeight })).catch(() => null) : null));
-  ws.getRow(H).values = ['No', 'Picture', 'Code', 'Description', 'Unit', 'Ctn', 'QTY', 'Price ' + (m.cur || ''), 'Total Price'];
+  ws.getRow(H).values = ['No', 'Picture', 'Code', 'Description', 'Unit', 'Ctn', 'QTY', 'Price ' + curText(m.cur), 'Total Price'];
   ws.getRow(H).eachCell(c => { c.fill = fill('FFED7D31'); c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.border = box; c.alignment = { horizontal: 'center', vertical: 'middle' }; });
   ws.getRow(H).height = 22;
   o.rows.forEach((r, i) => {
@@ -600,7 +622,7 @@ async function makeXlsx(o) {
   };
   fr(g + 1, 'TRANZIT AND COST:', t.transit, true);
   fr(g + 2, `COMMISSION (${num(o.commPct)}%):`, { formula: `ROUND(I${g}*${num(o.commPct)}/100,0)`, result: t.comm });
-  fr(g + 3, 'TOTAL:', { formula: `I${g}+I${g + 1}+I${g + 2}`, result: t.final }, true, true);
+  fr(g + 3, 'TOTAL' + (curText(m.cur) ? ' (' + curText(m.cur) + ')' : '') + ':', { formula: `I${g}+I${g + 1}+I${g + 2}`, result: t.final }, true, true);
   const buf = await wb.xlsx.writeBuffer();
   return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }

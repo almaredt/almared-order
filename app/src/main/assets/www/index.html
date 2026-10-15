@@ -37,7 +37,7 @@
         <label><span>Date</span><input id="mt_date" data-meta="date"></label>
         <label class="full"><span>Buyer</span><input id="mt_buyer" data-meta="buyer"></label>
         <label><span>P.O Box</span><input id="mt_pobox" data-meta="pobox"></label>
-        <label><span>Currency</span><input id="mt_cur" data-meta="cur" placeholder="T / AED / $"></label>
+        <label><span>Currency</span><select id="mt_cur" data-meta="cur" class="cursel"></select></label>
         <label><span>Container No 1</span><input id="mt_cont1" data-meta="cont1" autocapitalize="characters"></label>
         <label><span>Container No 2</span><input id="mt_cont2" data-meta="cont2" autocapitalize="characters"></label>
         <label><span>Tranzit &amp; cost</span><input id="mt_transit" class="num" inputmode="decimal"></label>
@@ -56,7 +56,7 @@
     <button class="totals" id="oTotals" dir="ltr">
       <span><small>CTN</small><b id="tCtn">0</b></span>
       <span><small>QTY</small><b id="tQty">0</b></span>
-      <span class="big"><small>TOTAL</small><b id="tFinal">0</b></span>
+      <span class="big"><small>TOTAL <em id="tCur"></em></small><b id="tFinal">0</b></span>
     </button>
     <div class="dockbtns">
       <button class="dbtn" id="oGallery" aria-label="از گالری">🖼<small>گالری</small></button>
@@ -178,7 +178,7 @@
     <label class="full"><span>Title</span><input id="st_title"></label>
     <label class="full"><span>Buyer</span><input id="st_buyer"></label>
     <label><span>P.O Box</span><input id="st_pobox"></label>
-    <label><span>Currency</span><input id="st_cur"></label>
+    <label><span>Currency</span><select id="st_cur" class="cursel"></select></label>
     <label><span>Description</span><input id="st_desc"></label>
     <label><span>Commission %</span><input id="st_comm" class="num" inputmode="decimal"></label>
   </div>
