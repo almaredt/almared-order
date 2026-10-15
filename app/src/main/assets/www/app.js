@@ -64,9 +64,12 @@ const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV
 const today = () => { const d = new Date(); return d.getFullYear() + '/' + MONTHS[d.getMonth()] + '/' + String(d.getDate()).padStart(2, '0'); };
 
 /* ---------------- settings ---------------- */
-const DEF_SETTINGS = { title: 'OR INVOICE', buyer: 'ALMARED TRADING L.L.C', pobox: '15043', cur: 'T', desc: 'PLASTIC TOYS' };
+const DEF_SETTINGS = { title: 'OR INVOICE', buyer: '', cur: 'T', desc: 'PLASTIC TOYS' };
 let SET = { ...DEF_SETTINGS };
 try { Object.assign(SET, JSON.parse(localStorage.getItem('ol.settings') || '{}')); } catch (e) {}
+// v1.9: buyer starts empty (each user types their own company); P.O Box and containers were removed
+if (SET.buyer === 'ALMARED TRADING L.L.C') SET.buyer = '';
+delete SET.pobox; delete SET.comm;
 const saveSettings = () => { try { localStorage.setItem('ol.settings', JSON.stringify(SET)); } catch (e) {} };
 
 /* ---------------- model ---------------- */
@@ -83,7 +86,7 @@ function newOrder() {
   const nums = ORDERS.map(o => parseInt(o.meta.invNo, 10)).filter(n => isFinite(n));
   return {
     id: uid(), created: Date.now(), updated: Date.now(),
-    meta: { title: SET.title, buyer: SET.buyer, pobox: SET.pobox, invNo: nums.length ? String(Math.max(...nums) + 1) : '1', date: today(), cont1: '', cont2: '', cur: SET.cur },
+    meta: { title: SET.title, buyer: SET.buyer, invNo: nums.length ? String(Math.max(...nums) + 1) : '1', date: today(), cur: SET.cur },
     rows: []
   };
 }
@@ -206,7 +209,7 @@ function renderHome() {
   const q = $('hSearch').value.trim().toLowerCase();
   const list = ORDERS.slice().sort((a, b) => b.updated - a.updated).filter(o => {
     if (!q) return true;
-    const hay = [o.meta.title, o.meta.invNo, o.meta.date, o.meta.cont1, o.meta.cont2, o.meta.buyer, ...o.rows.map(r => r.code)].join(' ').toLowerCase();
+    const hay = [o.meta.title, o.meta.invNo, o.meta.date, o.meta.buyer, ...o.rows.map(r => r.code)].join(' ').toLowerCase();
     return hay.includes(q);
   });
   if (!list.length) {
@@ -220,7 +223,7 @@ function renderHome() {
       <span class="othumbs ${imgs.length === 1 ? 'one' : ''}">${thumbs}</span>
       <span class="oinfo">
         <span class="t">${esc(o.meta.title)} NO:${esc(o.meta.invNo)}</span>
-        <span class="s">${esc(o.meta.date)}${o.meta.cont1 ? ' · ' + esc(o.meta.cont1) : ''}</span>
+        <span class="s">${esc(o.meta.date)}${o.meta.buyer ? ' · ' + esc(o.meta.buyer) : ''}</span>
         <span class="m"><span><b>${o.rows.length}</b> ردیف</span><span><b>${fmt(t.ctn)}</b> کارتن</span><span><b>${fmt(t.final)}</b> ${curHTML(o.meta.cur)}</span></span>
       </span></button>`;
   }).join('');
@@ -249,19 +252,19 @@ $('fJson').addEventListener('change', e => {
 });
 
 function openSettings() {
-  $('st_title').value = SET.title; $('st_buyer').value = SET.buyer; $('st_pobox').value = SET.pobox;
+  $('st_title').value = SET.title; $('st_buyer').value = SET.buyer;
   fillCurSelect($('st_cur'), SET.cur); $('st_desc').value = SET.desc;
   openSheet('sSettings');
 }
 $('stSave').onclick = () => {
-  SET = { title: $('st_title').value, buyer: $('st_buyer').value, pobox: $('st_pobox').value, cur: $('st_cur').value, desc: $('st_desc').value };
+  SET = { title: $('st_title').value, buyer: $('st_buyer').value.trim(), cur: $('st_cur').value, desc: $('st_desc').value };
   saveSettings(); closeSheet(); toast('پیش‌فرض‌ها ذخیره شد');
 };
 
 /* =============================================================
    ORDER
    ============================================================= */
-const META_KEYS = ['title', 'invNo', 'date', 'buyer', 'pobox', 'cur', 'cont1', 'cont2'];
+const META_KEYS = ['title', 'invNo', 'date', 'buyer', 'cur'];
 function openOrder(id, isNew) {
   CUR = ORDERS.find(o => o.id === id); if (!CUR) return;
   META_KEYS.forEach(k => { if (k === 'cur') fillCurSelect($('mt_cur'), CUR.meta.cur); else $('mt_' + k).value = CUR.meta[k] ?? ''; });
@@ -273,7 +276,7 @@ function renderOrderHead() {
   const m = CUR.meta;
   $('oTitle').textContent = `${m.title} NO:${m.invNo}`;
   $('oSub').innerHTML = `<bdi dir="ltr">${esc(m.date)}</bdi> · ${CUR.rows.length} ردیف`;
-  $('oMetaSum').textContent = [m.buyer, m.cont1, m.cont2].filter(Boolean).join(' · ');
+  $('oMetaSum').textContent = m.buyer || 'Buyer وارد نشده';
 }
 META_KEYS.forEach(k => $('mt_' + k).addEventListener(k === 'cur' ? 'change' : 'input', e => { CUR.meta[k] = e.target.value; if (k === 'cur') renderItems(); else { renderOrderHead(); renderTotals(); } save(); }));
 
@@ -513,7 +516,7 @@ const COLS = `<colgroup><col style="width:34px"><col style="width:88px"><col sty
 
 function sheetPages(o) {
   const m = o.meta, t = totals(o), cur = curHTML(m.cur);
-  const PH = 1123 - 60 - 24, HEAD = 156, TH = 32, RH = 56, FOOT = 26 + 6;
+  const PH = 1123 - 60 - 24, HEAD = 124, TH = 32, RH = 56, FOOT = 26 + 6;
   const rows = o.rows.map((r, i) => ({ r, i }));
   const pages = []; let cur_ = [], cap = Math.floor((PH - HEAD - TH) / RH);
   rows.forEach(x => { if (cur_.length >= cap) { pages.push(cur_); cur_ = []; cap = Math.floor((PH - TH) / RH); } cur_.push(x); });
@@ -521,9 +524,8 @@ function sheetPages(o) {
   const lastUsed = (pages.length === 1 ? HEAD : 0) + TH + cur_.length * RH;
   const footOwn = lastUsed + FOOT > PH;
   const head = `<h1>${esc(m.title)}</h1>
-    <div class="m"><span>BUYER:${esc(m.buyer)}</span><span>${esc(m.title)} NO:${esc(m.invNo)}</span></div>
-    <div class="m"><span>P.O BOX:${esc(m.pobox)}</span><span>DATE:${esc(m.date)}</span></div>
-    <div class="m cont"><span>${m.cont1 ? 'Container No:' + esc(m.cont1) : ''}</span><span>${m.cont2 ? 'Container No:' + esc(m.cont2) : ''}</span></div>`;
+    <div class="m"><span>${m.buyer ? 'BUYER:' + esc(m.buyer) : ''}</span><span>${esc(m.title)} NO:${esc(m.invNo)}</span></div>
+    <div class="m cont"><span></span><span>DATE:${esc(m.date)}</span></div>`;
   const thead = `<thead><tr><th>No</th><th>Picture</th><th>Code</th><th>Description</th><th>Unit</th><th>Ctn</th><th>QTY</th><th>Price ${cur}</th><th>Total Price</th></tr></thead>`;
   const rowHTML = ({ r, i }) => `<tr class="${i % 2 === 0 ? 'z' : ''}"><td>${i + 1}</td><td class="im">${r.img ? `<img src="${r.img}">` : ''}</td><td class="b">${esc(r.code)}</td><td class="d">${esc(r.desc)}</td><td class="b">${fmt(r.unit)}</td><td>${fmt(r.ctn)}</td><td>${fmt(qtyOf(r))}</td><td>${fmt(r.price)}</td><td>${fmt(totOf(r))}</td></tr>`;
   const foot = `<tr class="f g"><td></td><td colspan="4" class="l">GRAND TOTAL</td><td>${fmt(t.ctn)}</td><td>${fmt(t.qty)}</td><td></td><td class="r">${fmt(t.sum)} ${cur}</td></tr>`;
@@ -570,9 +572,9 @@ async function makeXlsx(o) {
   const fill = c => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: c } });
   const NF = '#,##0';
   ws.mergeCells('A1:I1'); ws.getCell('A1').value = m.title; ws.getCell('A1').font = { bold: true, size: 18 }; ws.getCell('A1').alignment = { horizontal: 'center' }; ws.getRow(1).height = 28;
-  [[2, 'BUYER:' + m.buyer, m.title + ' NO:' + m.invNo], [3, 'P.O BOX:' + m.pobox, 'DATE:' + m.date], [4, m.cont1 ? 'Container No:' + m.cont1 : '', m.cont2 ? 'Container No:' + m.cont2 : '']]
+  [[2, m.buyer ? 'BUYER:' + m.buyer : '', m.title + ' NO:' + m.invNo], [3, '', 'DATE:' + m.date]]
     .forEach(([r, a, b]) => { ws.mergeCells(`A${r}:E${r}`); ws.mergeCells(`G${r}:I${r}`); ws.getCell('A' + r).value = a; ws.getCell('G' + r).value = b; ws.getCell('A' + r).font = { bold: true }; ws.getCell('G' + r).font = { bold: true }; });
-  const H = 6, CELL_W = 103, CELL_H = 64; // picture column ≈ 103 px wide, data rows 48 pt ≈ 64 px
+  const H = 5, CELL_W = 103, CELL_H = 64; // picture column ≈ 103 px wide, data rows 48 pt ≈ 64 px
   const sizes = await Promise.all(o.rows.map(r => r.img ? loadImage(r.img).then(im => ({ w: im.naturalWidth, h: im.naturalHeight })).catch(() => null) : null));
   ws.getRow(H).values = ['No', 'Picture', 'Code', 'Description', 'Unit', 'Ctn', 'QTY', 'Price ' + curText(m.cur), 'Total Price'];
   ws.getRow(H).eachCell(c => { c.fill = fill('FFED7D31'); c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.border = box; c.alignment = { horizontal: 'center', vertical: 'middle' }; });
