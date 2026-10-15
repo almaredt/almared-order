@@ -64,7 +64,7 @@ const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV
 const today = () => { const d = new Date(); return d.getFullYear() + '/' + MONTHS[d.getMonth()] + '/' + String(d.getDate()).padStart(2, '0'); };
 
 /* ---------------- settings ---------------- */
-const DEF_SETTINGS = { title: 'OR INVOICE', buyer: 'ALMARED TRADING L.L.C', pobox: '15043', cur: 'T', desc: 'PLASTIC TOYS', comm: 3 };
+const DEF_SETTINGS = { title: 'OR INVOICE', buyer: 'ALMARED TRADING L.L.C', pobox: '15043', cur: 'T', desc: 'PLASTIC TOYS' };
 let SET = { ...DEF_SETTINGS };
 try { Object.assign(SET, JSON.parse(localStorage.getItem('ol.settings') || '{}')); } catch (e) {}
 const saveSettings = () => { try { localStorage.setItem('ol.settings', JSON.stringify(SET)); } catch (e) {} };
@@ -76,21 +76,20 @@ const totOf = r => qtyOf(r) * num(r.price);
 function totals(o) {
   let ctn = 0, qty = 0, sum = 0;
   o.rows.forEach(r => { ctn += num(r.ctn); qty += qtyOf(r); sum += totOf(r); });
-  const comm = Math.round(sum * num(o.commPct) / 100), transit = num(o.transit);
-  return { ctn, qty, sum, comm, transit, final: sum + transit + comm };
+  // transit/cost and commission were removed (v1.8): the total is the sum of the rows
+  return { ctn, qty, sum, final: sum };
 }
 function newOrder() {
   const nums = ORDERS.map(o => parseInt(o.meta.invNo, 10)).filter(n => isFinite(n));
   return {
     id: uid(), created: Date.now(), updated: Date.now(),
     meta: { title: SET.title, buyer: SET.buyer, pobox: SET.pobox, invNo: nums.length ? String(Math.max(...nums) + 1) : '1', date: today(), cont1: '', cont2: '', cur: SET.cur },
-    transit: 0, commPct: num(SET.comm), rows: []
+    rows: []
   };
 }
 function normalizeOrder(d) {
   const o = newOrder();
   o.meta = Object.assign(o.meta, d.meta || {});
-  o.transit = num(d.transit); o.commPct = d.commPct == null ? o.commPct : num(d.commPct);
   o.rows = (d.rows || []).map(r => Object.assign(newRow(), r, { id: uid() }));
   return o;
 }
@@ -251,11 +250,11 @@ $('fJson').addEventListener('change', e => {
 
 function openSettings() {
   $('st_title').value = SET.title; $('st_buyer').value = SET.buyer; $('st_pobox').value = SET.pobox;
-  fillCurSelect($('st_cur'), SET.cur); $('st_desc').value = SET.desc; $('st_comm').value = SET.comm;
+  fillCurSelect($('st_cur'), SET.cur); $('st_desc').value = SET.desc;
   openSheet('sSettings');
 }
 $('stSave').onclick = () => {
-  SET = { title: $('st_title').value, buyer: $('st_buyer').value, pobox: $('st_pobox').value, cur: $('st_cur').value, desc: $('st_desc').value, comm: num($('st_comm').value) };
+  SET = { title: $('st_title').value, buyer: $('st_buyer').value, pobox: $('st_pobox').value, cur: $('st_cur').value, desc: $('st_desc').value };
   saveSettings(); closeSheet(); toast('پیش‌فرض‌ها ذخیره شد');
 };
 
@@ -266,7 +265,6 @@ const META_KEYS = ['title', 'invNo', 'date', 'buyer', 'pobox', 'cur', 'cont1', '
 function openOrder(id, isNew) {
   CUR = ORDERS.find(o => o.id === id); if (!CUR) return;
   META_KEYS.forEach(k => { if (k === 'cur') fillCurSelect($('mt_cur'), CUR.meta.cur); else $('mt_' + k).value = CUR.meta[k] ?? ''; });
-  setNum($('mt_transit'), CUR.transit); $('mt_comm').value = CUR.commPct ?? 0;
   $('oMeta').open = !!isNew;
   renderOrderHead(); renderItems(); showView('vOrder');
   $('oScroll').scrollTop = 0;
@@ -278,8 +276,6 @@ function renderOrderHead() {
   $('oMetaSum').textContent = [m.buyer, m.cont1, m.cont2].filter(Boolean).join(' · ');
 }
 META_KEYS.forEach(k => $('mt_' + k).addEventListener(k === 'cur' ? 'change' : 'input', e => { CUR.meta[k] = e.target.value; if (k === 'cur') renderItems(); else { renderOrderHead(); renderTotals(); } save(); }));
-$('mt_transit').addEventListener('input', e => { CUR.transit = num(e.target.value); renderTotals(); save(); });
-$('mt_comm').addEventListener('input', e => { CUR.commPct = num(e.target.value); renderTotals(); save(); });
 
 function cardHTML(r, i) {
   const cur = curHTML(CUR.meta.cur), q = qtyOf(r);
@@ -319,8 +315,6 @@ $('oGallery').onclick = () => { camTarget = null; $('fGal').value = ''; $('fGal'
 $('oTotals').onclick = () => {
   const t = totals(CUR), c = curHTML(CUR.meta.cur);
   $('menuList').innerHTML = `<div dir="ltr" style="display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums">
-    ${[['GRAND TOTAL', t.sum], ['TRANZIT AND COST', t.transit], [`COMMISSION (${fmt(CUR.commPct)}%)`, t.comm]].map(([l, v]) =>
-      `<div style="display:flex;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--line)"><span style="color:var(--muted);font-weight:700;font-size:13px">${l}</span><b>${fmt(v)}</b></div>`).join('')}
     <div style="display:flex;justify-content:space-between;padding:14px 12px;background:var(--peach);border-radius:12px;margin-top:8px"><span style="font-weight:800">TOTAL</span><b style="font-size:20px">${fmt(t.final)} <small style="font-weight:400">${c}</small></b></div>
     <div style="display:flex;justify-content:space-between;padding:10px 4px;color:var(--muted);font-size:13px"><span>CTN ${fmt(t.ctn)}</span><span>QTY ${fmt(t.qty)}</span><span>${CUR.rows.length} items</span></div>
   </div>`;
@@ -519,7 +513,7 @@ const COLS = `<colgroup><col style="width:34px"><col style="width:88px"><col sty
 
 function sheetPages(o) {
   const m = o.meta, t = totals(o), cur = curHTML(m.cur);
-  const PH = 1123 - 60 - 24, HEAD = 156, TH = 32, RH = 56, FOOT = 26 * 4 + 6;
+  const PH = 1123 - 60 - 24, HEAD = 156, TH = 32, RH = 56, FOOT = 26 + 6;
   const rows = o.rows.map((r, i) => ({ r, i }));
   const pages = []; let cur_ = [], cap = Math.floor((PH - HEAD - TH) / RH);
   rows.forEach(x => { if (cur_.length >= cap) { pages.push(cur_); cur_ = []; cap = Math.floor((PH - TH) / RH); } cur_.push(x); });
@@ -532,11 +526,7 @@ function sheetPages(o) {
     <div class="m cont"><span>${m.cont1 ? 'Container No:' + esc(m.cont1) : ''}</span><span>${m.cont2 ? 'Container No:' + esc(m.cont2) : ''}</span></div>`;
   const thead = `<thead><tr><th>No</th><th>Picture</th><th>Code</th><th>Description</th><th>Unit</th><th>Ctn</th><th>QTY</th><th>Price ${cur}</th><th>Total Price</th></tr></thead>`;
   const rowHTML = ({ r, i }) => `<tr class="${i % 2 === 0 ? 'z' : ''}"><td>${i + 1}</td><td class="im">${r.img ? `<img src="${r.img}">` : ''}</td><td class="b">${esc(r.code)}</td><td class="d">${esc(r.desc)}</td><td class="b">${fmt(r.unit)}</td><td>${fmt(r.ctn)}</td><td>${fmt(qtyOf(r))}</td><td>${fmt(r.price)}</td><td>${fmt(totOf(r))}</td></tr>`;
-  const e5 = '<td></td><td></td><td></td><td></td><td></td>';
-  const foot = `<tr class="f g"><td></td><td colspan="4" class="l">GRAND TOTAL</td><td>${fmt(t.ctn)}</td><td>${fmt(t.qty)}</td><td></td><td class="r">${fmt(t.sum)}</td></tr>
-    <tr class="f z">${e5}<td colspan="3" class="l">TRANZIT AND COST:</td><td class="r">${fmt(t.transit)}</td></tr>
-    <tr class="f">${e5}<td colspan="3" class="l">COMMISSION${num(o.commPct) ? ' (' + fmt(o.commPct) + '%)' : ''}:</td><td class="r">${fmt(t.comm)}</td></tr>
-    <tr class="f z fin">${e5}<td colspan="3" class="l">TOTAL:</td><td class="r">${fmt(t.final)} ${cur}</td></tr>`;
+  const foot = `<tr class="f g"><td></td><td colspan="4" class="l">GRAND TOTAL</td><td>${fmt(t.ctn)}</td><td>${fmt(t.qty)}</td><td></td><td class="r">${fmt(t.sum)} ${cur}</td></tr>`;
   const total = pages.length + (footOwn ? 1 : 0);
   const out = pages.map((p, k) => {
     const isLast = k === pages.length - 1;
@@ -609,20 +599,12 @@ async function makeXlsx(o) {
     }
   });
   const last = H + Math.max(o.rows.length, 1), g = last + 1;
-  ws.mergeCells(`B${g}:E${g}`); ws.getCell('B' + g).value = 'GRAND TOTAL'; ws.getCell('B' + g).font = { size: 14 };
+  ws.mergeCells(`B${g}:E${g}`); ws.getCell('B' + g).value = 'GRAND TOTAL' + (curText(m.cur) ? ' (' + curText(m.cur) + ')' : ''); ws.getCell('B' + g).font = { size: 14 };
   ws.getCell('F' + g).value = { formula: `SUM(F${H + 1}:F${last})`, result: t.ctn };
   ws.getCell('G' + g).value = { formula: `SUM(G${H + 1}:G${last})`, result: t.qty };
   ws.getCell('I' + g).value = { formula: `SUM(I${H + 1}:I${last})`, result: t.sum };
   for (let c = 1; c <= 9; c++) { const cl = ws.getRow(g).getCell(c); cl.border = box; cl.numFmt = NF; cl.alignment = { horizontal: c === 2 ? 'left' : 'center', vertical: 'middle' }; }
   ws.getCell('I' + g).font = { bold: true };
-  const fr = (n, label, val, alt, big) => {
-    ws.mergeCells(`F${n}:H${n}`); ws.getCell('F' + n).value = label; ws.getCell('I' + n).value = val; ws.getCell('I' + n).numFmt = NF;
-    for (let c = 1; c <= 9; c++) { const cl = ws.getRow(n).getCell(c); cl.border = box; if (alt) cl.fill = fill('FFFCE4D6'); }
-    ws.getCell('F' + n).font = { bold: !!big, size: big ? 12 : 11 }; ws.getCell('I' + n).font = { bold: true, size: big ? 12 : 11 };
-  };
-  fr(g + 1, 'TRANZIT AND COST:', t.transit, true);
-  fr(g + 2, `COMMISSION (${num(o.commPct)}%):`, { formula: `ROUND(I${g}*${num(o.commPct)}/100,0)`, result: t.comm });
-  fr(g + 3, 'TOTAL' + (curText(m.cur) ? ' (' + curText(m.cur) + ')' : '') + ':', { formula: `I${g}+I${g + 1}+I${g + 2}`, result: t.final }, true, true);
   const buf = await wb.xlsx.writeBuffer();
   return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
@@ -686,7 +668,7 @@ async function runExport(ex) {
   try {
     if (ex === 'print') { doPrint(o); return; }
     if (ex === 'json') {
-      const blob = new Blob([JSON.stringify({ meta: o.meta, transit: o.transit, commPct: o.commPct, rows: o.rows })], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify({ meta: o.meta, rows: o.rows })], { type: 'application/json' });
       return deliver(blob, baseName(o) + '.json', 'share');
     }
     const [kind, mode] = ex.split('-');
